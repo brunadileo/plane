@@ -4,13 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import type { MutableRefObject } from "react";
+import type { MutableRefObject, ReactNode } from "react";
+import { Fragment } from "react";
 import { observer } from "mobx-react";
 // plane imports
 import type { TIssue, IIssueDisplayProperties, IIssueMap } from "@plane/types";
 // local imports
 import type { TRenderQuickActions } from "../list/list-view-types";
 import { KanbanIssueBlock } from "./block";
+import { buildKanbanColumnTree } from "./column-tree";
 
 interface IssueBlocksListProps {
   sub_group_id: string;
@@ -43,39 +45,50 @@ export const KanbanIssueBlocksList = observer(function KanbanIssueBlocksList(pro
     isEpic = false,
   } = props;
 
-  return (
-    <>
-      {issueIds && issueIds.length > 0 ? (
-        <>
-          {issueIds.map((issueId, index) => {
-            if (!issueId) return null;
-
-            let draggableId = issueId;
-            if (groupId) draggableId = `${draggableId}__${groupId}`;
-            if (sub_group_id) draggableId = `${draggableId}__${sub_group_id}`;
-
-            return (
-              <KanbanIssueBlock
-                key={draggableId}
-                issueId={issueId}
-                groupId={groupId}
-                subGroupId={sub_group_id}
-                shouldRenderByDefault={index <= 10}
-                issuesMap={issuesMap}
-                displayProperties={displayProperties}
-                updateIssue={updateIssue}
-                quickActions={quickActions}
-                draggableId={draggableId}
-                canDropOverIssue={canDropOverIssue}
-                canDragIssuesInCurrentGrouping={canDragIssuesInCurrentGrouping}
-                canEditProperties={canEditProperties}
-                scrollableContainerRef={scrollableContainerRef}
-                isEpic={isEpic}
-              />
-            );
-          })}
-        </>
-      ) : null}
-    </>
+  // sub-issues whose parent is in this column render nested under the parent card
+  const { rootIds, childIdsByParentId } = buildKanbanColumnTree(
+    issueIds.filter((issueId) => !!issueId),
+    (issueId) => issuesMap[issueId]?.parent_id
   );
+
+  let renderIndex = 0;
+
+  const renderIssueBlock = (issueId: string, isNested: boolean): ReactNode => {
+    const index = renderIndex++;
+
+    let draggableId = issueId;
+    if (groupId) draggableId = `${draggableId}__${groupId}`;
+    if (sub_group_id) draggableId = `${draggableId}__${sub_group_id}`;
+
+    const childIds = childIdsByParentId[issueId];
+
+    return (
+      <Fragment key={draggableId}>
+        <KanbanIssueBlock
+          issueId={issueId}
+          groupId={groupId}
+          subGroupId={sub_group_id}
+          shouldRenderByDefault={index <= 10}
+          issuesMap={issuesMap}
+          displayProperties={displayProperties}
+          updateIssue={updateIssue}
+          quickActions={quickActions}
+          draggableId={draggableId}
+          canDropOverIssue={canDropOverIssue}
+          canDragIssuesInCurrentGrouping={canDragIssuesInCurrentGrouping}
+          canEditProperties={canEditProperties}
+          scrollableContainerRef={scrollableContainerRef}
+          showParentReference={!isNested}
+          isEpic={isEpic}
+        />
+        {childIds && childIds.length > 0 && (
+          <div className="ml-3 border-l-2 border-subtle pl-2">
+            {childIds.map((childId) => renderIssueBlock(childId, true))}
+          </div>
+        )}
+      </Fragment>
+    );
+  };
+
+  return <>{rootIds.length > 0 ? rootIds.map((issueId) => renderIssueBlock(issueId, false)) : null}</>;
 });

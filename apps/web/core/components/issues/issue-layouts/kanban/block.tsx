@@ -11,7 +11,7 @@ import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-d
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane helpers
-import { MoreHorizontal } from "lucide-react";
+import { CornerDownRight, MoreHorizontal } from "lucide-react";
 import { useOutsideClickDetector } from "@plane/hooks";
 // types
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -49,12 +49,15 @@ interface IssueBlockProps {
   canEditProperties: (projectId: string | undefined) => boolean;
   scrollableContainerRef?: MutableRefObject<HTMLDivElement | null>;
   shouldRenderByDefault?: boolean;
+  // show a "↳ parent" line when the issue has a parent that is loaded
+  showParentReference?: boolean;
   isEpic?: boolean;
 }
 
 interface IssueDetailsBlockProps {
   cardRef: React.RefObject<HTMLElement>;
   issue: TIssue;
+  parentIssue?: TIssue;
   displayProperties: IIssueDisplayProperties | undefined;
   updateIssue: ((projectId: string | null, issueId: string, data: Partial<TIssue>) => Promise<void>) | undefined;
   quickActions: TRenderQuickActions;
@@ -63,7 +66,16 @@ interface IssueDetailsBlockProps {
 }
 
 const KanbanIssueDetailsBlock = observer(function KanbanIssueDetailsBlock(props: IssueDetailsBlockProps) {
-  const { cardRef, issue, updateIssue, quickActions, isReadOnly, displayProperties, isEpic = false } = props;
+  const {
+    cardRef,
+    issue,
+    parentIssue,
+    updateIssue,
+    quickActions,
+    isReadOnly,
+    displayProperties,
+    isEpic = false,
+  } = props;
   // refs
   const menuActionRef = useRef<HTMLDivElement | null>(null);
   // states
@@ -94,6 +106,19 @@ const KanbanIssueDetailsBlock = observer(function KanbanIssueDetailsBlock(props:
 
   return (
     <>
+      {parentIssue?.project_id && (
+        <div className="flex items-center gap-1 text-caption-sm-regular text-tertiary">
+          <CornerDownRight className="size-3 flex-shrink-0" />
+          <IssueIdentifier
+            issueId={parentIssue.id}
+            projectId={parentIssue.project_id}
+            size="xs"
+            variant="tertiary"
+            displayProperties={displayProperties}
+          />
+          <span className="truncate">{parentIssue.name}</span>
+        </div>
+      )}
       <div className="relative">
         {issue.project_id && (
           <IssueIdentifier
@@ -153,6 +178,7 @@ export const KanbanIssueBlock = observer(function KanbanIssueBlock(props: IssueB
     canEditProperties,
     scrollableContainerRef,
     shouldRenderByDefault,
+    showParentReference = false,
     isEpic = false,
   } = props;
 
@@ -170,6 +196,7 @@ export const KanbanIssueBlock = observer(function KanbanIssueBlock(props: IssueB
   const handleIssuePeekOverview = (issue: TIssue) => handleRedirection(workspaceSlug, issue, isMobile);
 
   const issue = issuesMap[issueId];
+  const parentIssue = showParentReference && issue?.parent_id ? issuesMap[issue.parent_id] : undefined;
 
   const { setIsDragging: setIsKanbanDragging } = useKanbanView();
 
@@ -281,6 +308,7 @@ export const KanbanIssueBlock = observer(function KanbanIssueBlock(props: IssueB
             <KanbanIssueDetailsBlock
               cardRef={cardRef}
               issue={issue}
+              parentIssue={parentIssue}
               displayProperties={displayProperties}
               updateIssue={updateIssue}
               quickActions={quickActions}
