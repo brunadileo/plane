@@ -144,7 +144,7 @@ export const KanBan = observer(function KanBan(props: IKanBan) {
   const isSubGroup = !!sub_group_id && sub_group_id !== "null";
 
   return (
-    <ContentWrapper className={`relative flex-row gap-4 !pt-2 !pb-0`}>
+    <ContentWrapper className={`relative flex-row gap-3 !pt-2 !pb-0`}>
       {list &&
         list.length > 0 &&
         list.map((subList: IGroupByColumn, groupIndex) => {
@@ -162,7 +162,7 @@ export const KanBan = observer(function KanBan(props: IKanBan) {
             <div
               key={subList.id}
               className={`group relative flex flex-shrink-0 flex-col ${
-                groupByVisibilityToggle.showIssues ? `w-[350px]` : ``
+                groupByVisibilityToggle.showIssues ? `max-w-[350px] min-w-[200px] flex-1 basis-0` : ``
               } `}
             >
               {sub_group_by === null && (

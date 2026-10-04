@@ -82,7 +82,7 @@ export const KanbanIssueBlocksList = observer(function KanbanIssueBlocksList(pro
           isEpic={isEpic}
         />
         {childIds && childIds.length > 0 && (
-          <div className="ml-3 border-l-2 border-subtle pl-2">
+          <div className="ml-1.5 border-l-2 border-subtle pl-1.5">
             {childIds.map((childId) => renderIssueBlock(childId, true))}
           </div>
         )}

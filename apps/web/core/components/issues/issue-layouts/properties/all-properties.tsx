@@ -54,10 +54,13 @@ export interface IIssueProperties {
   className: string;
   activeLayout: string;
   isEpic?: boolean;
+  // board cards: hide empty chips, and the state chip when the column already is that state
+  compactColumnId?: string;
 }
 
 export const IssueProperties = observer(function IssueProperties(props: IIssueProperties) {
-  const { issue, updateIssue, displayProperties, isReadOnly, className, isEpic = false } = props;
+  const { issue, updateIssue, displayProperties, isReadOnly, className, isEpic = false, compactColumnId } = props;
+  const isCompact = compactColumnId !== undefined;
   // i18n
   const { t } = useTranslation();
   // store hooks
@@ -198,7 +201,11 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
     <div className={className}>
       {/* basic properties */}
       {/* state */}
-      <WithDisplayPropertiesHOC displayProperties={displayProperties} displayPropertyKey="state">
+      <WithDisplayPropertiesHOC
+        displayProperties={displayProperties}
+        displayPropertyKey="state"
+        shouldRenderProperty={() => !isCompact || issue.state_id !== compactColumnId}
+      >
         {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
         <div className="h-5" onFocus={handleEventPropagation} onClick={handleEventPropagation}>
           <StateDropdown
@@ -215,7 +222,11 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       </WithDisplayPropertiesHOC>
 
       {/* priority */}
-      <WithDisplayPropertiesHOC displayProperties={displayProperties} displayPropertyKey="priority">
+      <WithDisplayPropertiesHOC
+        displayProperties={displayProperties}
+        displayPropertyKey="priority"
+        shouldRenderProperty={() => !isCompact || (!!issue.priority && issue.priority !== "none")}
+      >
         {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
         <div className="h-5" onFocus={handleEventPropagation} onClick={handleEventPropagation}>
           <PriorityDropdown
@@ -233,7 +244,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       <WithDisplayPropertiesHOC
         displayProperties={displayProperties}
         displayPropertyKey={["start_date", "due_date"]}
-        shouldRenderProperty={() => isDateRangeEnabled}
+        shouldRenderProperty={() => isDateRangeEnabled && (!isCompact || !!issue.start_date || !!issue.target_date)}
       >
         {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
         <div className="h-5" onFocus={handleEventPropagation} onClick={handleEventPropagation}>
@@ -269,7 +280,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       <WithDisplayPropertiesHOC
         displayProperties={displayProperties}
         displayPropertyKey="start_date"
-        shouldRenderProperty={() => !isDateRangeEnabled}
+        shouldRenderProperty={() => !isDateRangeEnabled && (!isCompact || !!issue.start_date)}
       >
         {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
         <div className="h-5" onFocus={handleEventPropagation} onClick={handleEventPropagation}>
@@ -293,7 +304,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       <WithDisplayPropertiesHOC
         displayProperties={displayProperties}
         displayPropertyKey="due_date"
-        shouldRenderProperty={() => !isDateRangeEnabled}
+        shouldRenderProperty={() => !isDateRangeEnabled && (!isCompact || !!issue.target_date)}
       >
         {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
         <div className="h-5" onFocus={handleEventPropagation} onClick={handleEventPropagation}>
@@ -318,7 +329,11 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       </WithDisplayPropertiesHOC>
 
       {/* assignee */}
-      <WithDisplayPropertiesHOC displayProperties={displayProperties} displayPropertyKey="assignee">
+      <WithDisplayPropertiesHOC
+        displayProperties={displayProperties}
+        displayPropertyKey="assignee"
+        shouldRenderProperty={() => !isCompact || issue.assignee_ids?.length > 0}
+      >
         {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
         <div className="h-5" onFocus={handleEventPropagation} onClick={handleEventPropagation}>
           <MemberDropdown
@@ -487,7 +502,11 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       </WithDisplayPropertiesHOC>
 
       {/* label */}
-      <WithDisplayPropertiesHOC displayProperties={displayProperties} displayPropertyKey="labels">
+      <WithDisplayPropertiesHOC
+        displayProperties={displayProperties}
+        displayPropertyKey="labels"
+        shouldRenderProperty={() => !isCompact || issue.label_ids?.length > 0}
+      >
         <IssuePropertyLabels
           projectId={issue?.project_id || null}
           value={issue?.label_ids || []}

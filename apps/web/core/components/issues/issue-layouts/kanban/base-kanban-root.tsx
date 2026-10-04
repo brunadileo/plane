@@ -264,8 +264,8 @@ export const BaseKanBanRoot = observer(function BaseKanBanRoot(props: IBaseKanBa
           className={`horizontal-scrollbar relative flex scrollbar-lg h-full w-full bg-surface-2 ${sub_group_by ? "vertical-scrollbar overflow-y-auto" : "overflow-x-auto overflow-y-hidden"}`}
           ref={scrollableContainerRef}
         >
-          <div className="relative h-full w-max min-w-full bg-surface-2">
-            <div className="h-full w-max">
+          <div className={`relative h-full ${sub_group_by ? "w-max" : "w-min"} min-w-full bg-surface-2`}>
+            <div className={`h-full ${sub_group_by ? "w-max" : "w-full"}`}>
               <KanBanView
                 issuesMap={issueMap}
                 groupedIssueIds={groupedIssueIds ?? {}}
