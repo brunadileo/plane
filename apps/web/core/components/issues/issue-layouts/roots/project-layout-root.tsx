@@ -16,6 +16,7 @@ import { ProjectLevelWorkItemFiltersHOC } from "@/components/work-item-filters/f
 import { WorkItemFiltersRow } from "@/components/work-item-filters/filters-row";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
+import { useAutoRefreshIssues } from "@/hooks/use-auto-refresh-issues";
 import { IssuesStoreContext } from "@/hooks/use-issue-layout-store";
 // local imports
 import { IssuePeekOverview } from "../../peek-overview";
@@ -61,6 +62,14 @@ export const ProjectLayoutRoot = observer(function ProjectLayoutRoot() {
       }
     },
     { revalidateIfStale: false, revalidateOnFocus: false }
+  );
+
+  // pick up cards changed outside this tab
+  useAutoRefreshIssues(
+    workspaceSlug && projectId
+      ? () => issues.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation")
+      : undefined,
+    () => !!issues.getIssueLoader()
   );
 
   if (!workspaceSlug || !projectId || !workItemFilters) return <></>;
