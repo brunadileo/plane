@@ -53,6 +53,7 @@ import { renderFormattedDate, getFileURL } from "@plane/utils";
 import { store } from "@/lib/store-context";
 import { ISSUE_FILTER_DEFAULT_DATA } from "@/store/issue/helpers/base-issues.store";
 import { DEFAULT_DISPLAY_PROPERTIES } from "@/store/issue/issue-details/sub_issues_filter.store";
+import { WORK_ITEM_TYPES } from "@/components/issues/issue-type/constants";
 // constants
 import { ISSUE_GROUP_BY_OPTIONS } from "@plane/constants";
 // components
@@ -152,6 +153,7 @@ export const getGroupByColumns = ({
     assignees: getAssigneeColumns,
     created_by: getCreatedByColumns,
     team_project: getTeamProjectColumns,
+    issue_type: getIssueTypeColumns,
   };
 
   // Get and return the columns for the specified group by option
@@ -829,6 +831,22 @@ export const getScopeMemberIds = ({ isWorkspaceLevel, projectId }: TGetColumns):
 };
 
 export const getTeamProjectColumns = (): IGroupByColumn[] | undefined => undefined;
+
+// Fork: one column per work item type, plus "None" for cards without a type
+const getIssueTypeColumns = (): IGroupByColumn[] => [
+  ...WORK_ITEM_TYPES.map((type) => ({
+    id: type.id,
+    name: type.name,
+    icon: <div className="size-3 flex-shrink-0 rounded-full" style={{ backgroundColor: type.color }} />,
+    payload: { type_id: type.id },
+  })),
+  {
+    id: "None",
+    name: "None",
+    icon: <div className="size-3 flex-shrink-0 rounded-full border border-strong" />,
+    payload: {},
+  },
+];
 
 export const SpreadSheetPropertyIconMap: Record<string, FC<ISvgIcons>> = {
   MembersPropertyIcon: MembersPropertyIcon,

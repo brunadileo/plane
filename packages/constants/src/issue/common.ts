@@ -37,6 +37,7 @@ export enum EIssueGroupByToServerOptions {
   "created_by" = "created_by",
   // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   "team_project" = "project_id",
+  "issue_type" = "type_id",
 }
 
 export enum EIssueGroupBYServerToProperty {
@@ -50,6 +51,7 @@ export enum EIssueGroupBYServerToProperty {
   "target_date" = "target_date",
   "project_id" = "project_id",
   "created_by" = "created_by",
+  "type_id" = "type_id",
 }
 
 export enum EIssueCommentAccessSpecifier {
@@ -124,6 +126,7 @@ export const ISSUE_GROUP_BY_OPTIONS: {
   { key: "labels", titleTranslationKey: "common.labels" },
   { key: "assignees", titleTranslationKey: "common.assignees" },
   { key: "created_by", titleTranslationKey: "common.created_by" },
+  { key: "issue_type", titleTranslationKey: "issue.display.properties.issue_type" },
   { key: null, titleTranslationKey: "common.none" },
 ];
 

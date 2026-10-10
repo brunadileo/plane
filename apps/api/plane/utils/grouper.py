@@ -22,6 +22,7 @@ from plane.db.models import (
     ModuleIssue,
     IssueLabel,
 )
+from plane.db.models.issue_type import IssueType
 from typing import Optional, Dict, Tuple, Any, Union, List
 
 
@@ -187,6 +188,15 @@ def issue_group_values(
     if field == "project_id":
         queryset = Project.objects.filter(workspace__slug=slug).values_list("id", flat=True)
         return list(queryset)
+
+    if field == "type_id":
+        # Fork: group by work item type; "None" holds cards without a type
+        queryset = IssueType.objects.filter(workspace__slug=slug, is_active=True).values_list("id", flat=True)
+        if project_id:
+            queryset = queryset.filter(
+                project_issue_types__project_id=project_id, project_issue_types__deleted_at__isnull=True
+            )
+        return list(queryset) + ["None"]
 
     if field == "priority":
         return ["low", "medium", "high", "urgent", "none"]

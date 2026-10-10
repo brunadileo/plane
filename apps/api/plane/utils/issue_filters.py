@@ -425,6 +425,21 @@ def filter_logged_by(params, issue_filter, method, prefix=""):
     return issue_filter
 
 
+def filter_issue_type(params, issue_filter, method, prefix=""):
+    # Fork: work item type (issues.type_id)
+    if method == "GET":
+        types = [item for item in params.get("issue_type").split(",") if item != "null"]
+        if "None" in types:
+            issue_filter[f"{prefix}type_id__isnull"] = True
+        types = filter_valid_uuids(types)
+        if len(types) and "" not in types:
+            issue_filter[f"{prefix}type_id__in"] = types
+    else:
+        if params.get("issue_type", None) and len(params.get("issue_type")) and params.get("issue_type") != "null":
+            issue_filter[f"{prefix}type_id__in"] = params.get("issue_type")
+    return issue_filter
+
+
 def issue_filters(query_params, method, prefix=""):
     issue_filter = {}
 
@@ -446,6 +461,7 @@ def issue_filters(query_params, method, prefix=""):
         "target_date": filter_target_date,
         "completed_at": filter_completed_at,
         "type": filter_issue_state_type,
+        "issue_type": filter_issue_type,
         "project": filter_project,
         "cycle": filter_cycle,
         "module": filter_module,

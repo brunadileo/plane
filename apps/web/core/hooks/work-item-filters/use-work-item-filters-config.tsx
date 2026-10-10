@@ -62,6 +62,7 @@ import { useProject } from "@/hooks/store/use-project";
 import { useProjectState } from "@/hooks/store/use-project-state";
 // plane web imports
 import { useFiltersOperatorConfigs } from "@/hooks/rich-filters/use-filters-operator-configs";
+import { getIssueTypeFilterConfig } from "@/components/issues/issue-type/filter-config";
 
 export type TWorkItemFiltersEntityProps = {
   workspaceSlug: string;
@@ -170,6 +171,16 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
         ...operatorConfigs,
       }),
     [isFilterEnabled, workItemStates, operatorConfigs]
+  );
+
+  // fork: work item type filter config
+  const issueTypeFilterConfig = useMemo(
+    () =>
+      getIssueTypeFilterConfig<TWorkItemFilterProperty>("type_id", {
+        isEnabled: isFilterEnabled("type_id"),
+        ...operatorConfigs,
+      }),
+    [isFilterEnabled, operatorConfigs]
   );
 
   // label filter config
@@ -372,6 +383,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       projectFilterConfig,
       mentionFilterConfig,
       labelFilterConfig,
+      issueTypeFilterConfig,
       cycleFilterConfig,
       moduleFilterConfig,
       startDateFilterConfig,
@@ -386,6 +398,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       state_group: stateGroupFilterConfig,
       state_id: stateFilterConfig,
       label_id: labelFilterConfig,
+      type_id: issueTypeFilterConfig,
       cycle_id: cycleFilterConfig,
       module_id: moduleFilterConfig,
       assignee_id: assigneeFilterConfig,
