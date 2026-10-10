@@ -20,7 +20,6 @@ import type {
 } from "@plane/types";
 // services
 import { APIService } from "@/services/api.service";
-import { setIssueTypeId } from "@/components/issues/issue-type/store";
 
 // Fork: the web keeps the work item type in `type_id`, the API field is `type`.
 const withTypeField = (data: Partial<TIssue>) =>
@@ -36,10 +35,7 @@ export class IssueService extends APIService {
 
   async createIssue(workspaceSlug: string, projectId: string, data: Partial<TIssue>): Promise<TIssue> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/`, withTypeField(data))
-      .then((response) => {
-        if (response?.data?.id) setIssueTypeId(response.data.id, response.data.type ?? null);
-        return response?.data;
-      })
+      .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
       });
@@ -236,10 +232,7 @@ export class IssueService extends APIService {
       `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/`,
       withTypeField(data)
     )
-      .then((response) => {
-        if (typeof data.type_id === "string") setIssueTypeId(issueId, data.type_id);
-        return response?.data;
-      })
+      .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
       });

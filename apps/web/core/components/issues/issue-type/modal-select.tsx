@@ -12,7 +12,6 @@ import type { TIssue } from "@plane/types";
 // local imports
 import { IssueTypeChip } from "./chip";
 import { DEFAULT_WORK_ITEM_TYPE_ID } from "./constants";
-import { getIssueTypeId } from "./store";
 
 type Props = {
   control: Control<TIssue>;
@@ -42,7 +41,7 @@ export const IssueTypeModalSelect = observer(function IssueTypeModalSelect(props
       render={({ field: { value, onChange } }) => (
         <div className="flex h-7 items-center">
           <IssueTypeChip
-            typeId={value ?? (issueId ? getIssueTypeId(issueId) : null)}
+            typeId={value}
             onChange={(typeId) => {
               onChange(typeId);
               handleFormChange();

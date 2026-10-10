@@ -809,6 +809,7 @@ class IssueSerializer(DynamicBaseSerializer):
             "link_count",
             "is_draft",
             "archived_at",
+            "type_id",
         ]
         read_only_fields = fields
 
@@ -861,6 +862,7 @@ class IssueListDetailSerializer(serializers.Serializer):
             "archived_at": instance.archived_at,
             # Computed fields
             "cycle_id": instance.cycle_id,
+            "type_id": instance.type_id,
             "module_ids": self.get_module_ids(instance),
             "label_ids": self.get_label_ids(instance),
             "assignee_ids": self.get_assignee_ids(instance),

@@ -14,7 +14,6 @@ import { Spinner } from "@plane/ui";
 // components
 import { ProjectLevelWorkItemFiltersHOC } from "@/components/work-item-filters/filters-hoc/project-level";
 import { WorkItemFiltersRow } from "@/components/work-item-filters/filters-row";
-import { loadProjectIssueTypes } from "@/components/issues/issue-type/store";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
 import { useAutoRefreshIssues } from "@/hooks/use-auto-refresh-issues";
@@ -68,11 +67,7 @@ export const ProjectLayoutRoot = observer(function ProjectLayoutRoot() {
   // pick up cards changed outside this tab
   useAutoRefreshIssues(
     workspaceSlug && projectId
-      ? () =>
-          Promise.all([
-            issues.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation"),
-            loadProjectIssueTypes(workspaceSlug, projectId, true),
-          ])
+      ? () => issues.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation")
       : undefined,
     () => !!issues.getIssueLoader()
   );

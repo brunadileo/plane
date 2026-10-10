@@ -4,7 +4,6 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect } from "react";
 import { Check } from "lucide-react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
@@ -12,11 +11,10 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssueIdentifierSize } from "@plane/types";
 import { CustomMenu } from "@plane/ui";
 import { cn } from "@plane/utils";
-// services
-import { IssueService } from "@/services/issue/issue.service";
+// hooks
+import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 // local imports
 import { WORK_ITEM_TYPES, getWorkItemType } from "./constants";
-import { getIssueTypeId, loadProjectIssueTypes, setIssueTypeId } from "./store";
 
 const SIZE_MAP: Record<TIssueIdentifierSize, string> = {
   xs: "text-caption-sm-medium",
@@ -24,8 +22,6 @@ const SIZE_MAP: Record<TIssueIdentifierSize, string> = {
   md: "text-caption-md-medium",
   lg: "text-caption-lg-medium",
 };
-
-const issueService = new IssueService();
 
 type TIssueTypeChipProps = {
   typeId: string | null | undefined;
@@ -83,26 +79,24 @@ type TIssueTypeChipForIssueProps = {
   size?: TIssueIdentifierSize;
 };
 
-/** The chip for a saved work item: reads the type map, PATCHes the work item on change. */
+/** The chip for a saved work item: reads `type_id` from the work item, saves a pick through the issue store. */
 export const IssueTypeChipForIssue = observer(function IssueTypeChipForIssue(props: TIssueTypeChipForIssueProps) {
   const { issueId, projectId, size } = props;
   const { workspaceSlug } = useParams();
   const slug = workspaceSlug?.toString();
+  const {
+    issue: { getIssueById },
+    updateIssue,
+  } = useIssueDetail();
 
-  useEffect(() => {
-    if (slug && projectId) void loadProjectIssueTypes(slug, projectId);
-  }, [slug, projectId]);
-
-  const typeId = getIssueTypeId(issueId);
+  const typeId = getIssueById(issueId)?.type_id ?? null;
   if (!slug || !getWorkItemType(typeId)) return null;
 
   const handleChange = async (newTypeId: string) => {
     if (newTypeId === typeId) return;
-    setIssueTypeId(issueId, newTypeId);
     try {
-      await issueService.patchIssue(slug, projectId, issueId, { type_id: newTypeId });
+      await updateIssue(slug, projectId, issueId, { type_id: newTypeId });
     } catch {
-      setIssueTypeId(issueId, typeId);
       setToast({ type: TOAST_TYPE.ERROR, title: "Could not change the work item type" });
     }
   };
