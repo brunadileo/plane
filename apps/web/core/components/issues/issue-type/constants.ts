@@ -17,7 +17,6 @@ export const WORK_ITEM_TYPES: TWorkItemType[] = [
   { id: "47dff625-4e5d-486a-a49a-43d24840a014", name: "build", color: "#3B82F6" },
   { id: "7d0d020c-2f53-40c9-aba5-7b31d3e853ae", name: "fix", color: "#EF4444" },
   { id: "883ff592-09dd-42e3-ab3a-abfb98cea1b5", name: "research", color: "#8B5CF6" },
-  { id: "f271acfe-bfbf-4358-b5a0-e7a227d68790", name: "docs", color: "#22C55E" },
   { id: "da25935e-a1ba-44a3-95df-769acea30384", name: "ops", color: "#6B7280" },
 ];
 
