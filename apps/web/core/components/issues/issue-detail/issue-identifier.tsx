@@ -11,6 +11,7 @@ import type { TIssueIdentifierProps } from "@plane/types";
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { useProject } from "@/hooks/store/use-project";
 import { IdentifierText } from "@/components/issues/issue-detail/identifier-text";
+import { IssueTypeChipForIssue } from "@/components/issues/issue-type/chip";
 
 export const IssueIdentifier = observer(function IssueIdentifier(props: TIssueIdentifierProps) {
   const { projectId, variant, size, displayProperties, enableClickToCopyIdentifier = false } = props;
@@ -37,6 +38,7 @@ export const IssueIdentifier = observer(function IssueIdentifier(props: TIssueId
         variant={variant}
         size={size}
       />
+      {isUsingStoreData && <IssueTypeChipForIssue issueId={props.issueId} projectId={projectId} size={size} />}
     </div>
   );
 });

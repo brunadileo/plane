@@ -27,6 +27,7 @@ import { StateDropdown } from "@/components/dropdowns/state/dropdown";
 import { ParentIssuesListModal } from "@/components/issues/parent-issues-list-modal";
 import { IssueLabelSelect } from "@/components/issues/select";
 import { IssueIdentifier } from "@/components/issues/issue-detail/issue-identifier";
+import { IssueTypeModalSelect } from "@/components/issues/issue-type/modal-select";
 // hooks
 import { useProjectEstimates } from "@/hooks/store/estimates";
 import { useProject } from "@/hooks/store/use-project";
@@ -85,6 +86,7 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <IssueTypeModalSelect control={control} issueId={id} handleFormChange={handleFormChange} />
       <Controller
         control={control}
         name="state_id"
