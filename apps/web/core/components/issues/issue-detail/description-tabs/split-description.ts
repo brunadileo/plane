@@ -99,6 +99,12 @@ function topLevelNodes(html: string): TNode[] {
 }
 
 /** True when the description has no text and no media (upstream shows its editor with the placeholder). */
+/** True when both descriptions read the same as plain text (markup and whitespace ignored). */
+export function sameText(a: string | null | undefined, b: string | null | undefined): boolean {
+  const words = (html: string | null | undefined) => textOf(html ?? "").replace(/\s+/g, "");
+  return words(a) === words(b);
+}
+
 export function isEmptyDescription(html: string | null | undefined): boolean {
   if (!html) return true;
   if (/<(img|image-component|issue-embed-component|iframe|hr|table)\b/i.test(html)) return false;

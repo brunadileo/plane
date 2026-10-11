@@ -15,7 +15,14 @@ import { DescriptionInput } from "@/components/editor/rich-text/description-inpu
 import { useProjectState } from "@/hooks/store/use-project-state";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 // local imports
-import { isEmptyDescription, NO_TEST_STEPS_TEXT, openingTabIndex, splitDescription } from "./split-description";
+import {
+  isEmptyDescription,
+  NO_TEST_STEPS_TEXT,
+  openingTabIndex,
+  sameText,
+  splitDescription,
+} from "./split-description";
+import { useFreshDescription } from "./use-fresh-description";
 
 type TDescriptionInputProps = Omit<ComponentProps<typeof DescriptionInput>, "key">;
 
@@ -35,8 +42,10 @@ export const DescriptionTabs = observer(function DescriptionTabs(props: Props) {
   // states
   // an empty description keeps the upstream editor; it stays an editor while the first text is typed
   const [isEditing, setIsEditing] = useState(() => isEmptyDescription(initialValue));
-  const [canFinish] = useState(() => !isEmptyDescription(initialValue));
+  const [canFinish, setCanFinish] = useState(() => !isEmptyDescription(initialValue));
   const [html, setHtml] = useState(initialValue ?? "");
+  // bumped to remount the editor with a description written elsewhere
+  const [inputKey, setInputKey] = useState(0);
   const [tabState, setTabState] = useState<{ index: number | null }>({ index: null });
   // refs
   const ownEditorRef = useRef<EditorRefApi>(null);
@@ -45,16 +54,37 @@ export const DescriptionTabs = observer(function DescriptionTabs(props: Props) {
   // derived values
   const stateName = stateId ? getStateById(stateId)?.name : undefined;
   const workspaceId = getWorkspaceBySlug(workspaceSlug)?.id;
+  const refreshDescription = useFreshDescription(workspaceSlug, projectId, entityId);
   const { intro, sections } = useMemo(() => splitDescription(html), [html]);
   const activeIndex = Math.min(tabState.index ?? openingTabIndex(sections.length, stateName), sections.length - 1);
   const active = sections[activeIndex];
 
-  // follow saves from elsewhere (version restore, another client) while not editing
+  // follow saves from elsewhere (API, version restore, another client); in the editor only while nothing is typed,
+  // so a stale editor never gets saved over the newer description
   const isEditingRef = useRef(isEditing);
   isEditingRef.current = isEditing;
+  const canFinishRef = useRef(canFinish);
+  canFinishRef.current = canFinish;
+  const htmlRef = useRef(html);
+  htmlRef.current = html;
   useEffect(() => {
-    if (!isEditingRef.current) setHtml(initialValue ?? "");
-  }, [initialValue]);
+    const next = initialValue ?? "";
+    if (!isEditingRef.current) {
+      setHtml(next);
+      return;
+    }
+    const current = activeEditorRef.current?.getDocument().html ?? "";
+    // own save coming back, or typed changes that are not saved yet
+    if (current === next || !sameText(current, htmlRef.current)) return;
+    if (sameText(next, htmlRef.current)) return;
+    setHtml(next);
+    setInputKey((key) => key + 1);
+    // an empty card that only got its description from elsewhere goes to tabs
+    if (!canFinishRef.current && !isEmptyDescription(next)) {
+      setCanFinish(true);
+      setIsEditing(false);
+    }
+  }, [initialValue, activeEditorRef]);
 
   const finishEditing = () => {
     const latest = activeEditorRef.current?.getDocument().html;
@@ -74,7 +104,7 @@ export const DescriptionTabs = observer(function DescriptionTabs(props: Props) {
 
   if (isEditing || !workspaceId || sections.length === 0) {
     return (
-      <div>
+      <div onFocusCapture={() => void refreshDescription().catch(() => undefined)}>
         {isEditing && canFinish && (
           <div className="flex items-center justify-between gap-3 pb-2">
             <span className="text-12 text-tertiary">
@@ -91,7 +121,7 @@ export const DescriptionTabs = observer(function DescriptionTabs(props: Props) {
         )}
         <DescriptionInput
           {...inputProps}
-          key={entityId}
+          key={`${entityId}-${inputKey}`}
           initialValue={html}
           disabled={disabled}
           editorRef={activeEditorRef}
@@ -155,7 +185,10 @@ export const DescriptionTabs = observer(function DescriptionTabs(props: Props) {
           <button
             type="button"
             className="mb-1.5 flex-shrink-0 rounded-md border border-strong px-2.5 py-1 text-12 font-medium text-secondary hover:bg-layer-transparent-hover hover:text-primary"
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              void refreshDescription().catch(() => undefined);
+              setIsEditing(true);
+            }}
           >
             Edit
           </button>
