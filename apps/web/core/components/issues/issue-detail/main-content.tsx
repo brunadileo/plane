@@ -13,7 +13,6 @@ import type { TNameDescriptionLoader } from "@plane/types";
 import { EFileAssetType, EIssueServiceType } from "@plane/types";
 // components
 import { DescriptionVersionsRoot } from "@/components/core/description-versions";
-import { DescriptionInput } from "@/components/editor/rich-text/description-input";
 import { IssueTypeSwitcher } from "@/components/issues/issue-type-switcher";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
@@ -29,6 +28,7 @@ import { NameDescriptionUpdateStatus } from "../issue-update-status";
 import { PeekOverviewProperties } from "../peek-overview/properties";
 import { IssueTitleInput } from "../title-input";
 import { IssueActivity } from "./issue-activity";
+import { DescriptionTabs } from "./description-tabs";
 import { IssueParentDetail } from "./parent";
 import { IssueReaction } from "./reactions";
 import type { TIssueOperations } from "./root";
@@ -107,7 +107,8 @@ export const IssueMainContent = observer(function IssueMainContent(props: Props)
           containerClassName="-ml-3"
         />
 
-        <DescriptionInput
+        <DescriptionTabs
+          stateId={issue.state_id}
           issueSequenceId={issue.sequence_id}
           containerClassName="-ml-6 border-none p-0! pl-6!"
           disabled={isArchived || !isEditable}
@@ -154,7 +155,14 @@ export const IssueMainContent = observer(function IssueMainContent(props: Props)
                 retrieveDescriptionVersion: (issueId, versionId) =>
                   workItemVersionService.retrieveDescriptionVersion(workspaceSlug, projectId, issueId, versionId),
               }}
-              handleRestore={(descriptionHTML) => editorRef.current?.setEditorValue(descriptionHTML, true)}
+              handleRestore={(descriptionHTML) => {
+                if (editorRef.current) editorRef.current.setEditorValue(descriptionHTML, true);
+                // tabs view has no editor mounted: save the restored description directly
+                else if (issue.project_id)
+                  void issueOperations.update(workspaceSlug, issue.project_id, issue.id, {
+                    description_html: descriptionHTML,
+                  });
+              }}
               projectId={projectId}
               workspaceSlug={workspaceSlug}
             />

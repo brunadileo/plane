@@ -13,7 +13,6 @@ import { EFileAssetType } from "@plane/types";
 import type { TNameDescriptionLoader } from "@plane/types";
 // components
 import { DescriptionVersionsRoot } from "@/components/core/description-versions";
-import { DescriptionInput } from "@/components/editor/rich-text/description-input";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { useMember } from "@/hooks/store/use-member";
@@ -26,6 +25,7 @@ import { IssueTypeSwitcher } from "@/components/issues/issue-type-switcher";
 import { WorkItemVersionService } from "@/services/issue";
 // local components
 import type { TIssueOperations } from "../issue-detail";
+import { DescriptionTabs } from "../issue-detail/description-tabs";
 import { IssueParentDetail } from "../issue-detail/parent";
 import { IssueReaction } from "../issue-detail/reactions";
 import { IssueTitleInput } from "../title-input";
@@ -106,7 +106,8 @@ export const PeekOverviewIssueDetails = observer(function PeekOverviewIssueDetai
         containerClassName="-ml-3"
       />
 
-      <DescriptionInput
+      <DescriptionTabs
+        stateId={issue.state_id}
         issueSequenceId={issue.sequence_id}
         containerClassName="-ml-3 border-none"
         disabled={disabled || isArchived}
@@ -161,7 +162,14 @@ export const PeekOverviewIssueDetails = observer(function PeekOverviewIssueDetai
                   versionId
                 ),
             }}
-            handleRestore={(descriptionHTML) => editorRef.current?.setEditorValue(descriptionHTML, true)}
+            handleRestore={(descriptionHTML) => {
+              if (editorRef.current) editorRef.current.setEditorValue(descriptionHTML, true);
+              // tabs view has no editor mounted: save the restored description directly
+              else if (issue.project_id)
+                void issueOperations.update(workspaceSlug, issue.project_id, issue.id, {
+                  description_html: descriptionHTML,
+                });
+            }}
             projectId={issue.project_id}
             workspaceSlug={workspaceSlug}
           />
