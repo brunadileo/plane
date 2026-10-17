@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAutoRefreshIssues } from "@/hooks/use-auto-refresh-issues";
-import type { TNeedsMe } from "@/services/needs-me.service";
+import type { TNeedsMe, TNeedsMeDone } from "@/services/needs-me.service";
 import { needsMeService } from "@/services/needs-me.service";
 
 export const PASS_UNDO_MS = 5000;
@@ -213,29 +213,47 @@ export const useNeedsMe = (workspaceSlug: string) => {
     [workspaceSlug, refresh]
   );
 
-  const seenAll = useCallback(async () => {
-    if (!data) return;
-    const before = data;
-    setSeenAllBusy(true);
-    setData({ ...data, done: [] });
-    inFlight.current += 1;
-    try {
-      await needsMeService.seenAll(workspaceSlug, data.generated_at);
-      const ids = before.done.map((x) => x.issue_id);
-      setHidden((h) => ({ ...h, ...Object.fromEntries(ids.map((id) => [id, fetchSeq.current])) }));
-      setRowErrors((e) => {
-        const { __all: _gone, ...rest } = e;
-        return rest;
-      });
-      void refresh(true);
-    } catch {
-      setData((d) => (d ? { ...d, done: before.done } : d));
-      setRowErrors((e) => ({ ...e, __all: SEEN_ERROR_TEXT }));
-    } finally {
-      inFlight.current -= 1;
-      setSeenAllBusy(false);
-    }
-  }, [data, workspaceSlug, refresh]);
+  // rows: only these Done rows (a project filter is on); null marks the whole list
+  const seenAll = useCallback(
+    async (rows: TNeedsMeDone[] | null) => {
+      if (!data) return;
+      const before = data;
+      const gone = new Set((rows ?? before.done).map((x) => x.issue_id));
+      setSeenAllBusy(true);
+      setData((d) => (d ? { ...d, done: rows ? d.done.filter((x) => !gone.has(x.issue_id)) : [] } : d));
+      inFlight.current += 1;
+      let failed = new Set<string>();
+      try {
+        if (rows) {
+          const results = await Promise.allSettled(
+            rows.map((x) => needsMeService.seenOne(workspaceSlug, x.issue_id, x.at))
+          );
+          failed = new Set(rows.filter((_, i) => results[i].status === "rejected").map((x) => x.issue_id));
+          if (failed.size > 0) throw new Error("some rows not saved");
+        } else {
+          await needsMeService.seenAll(workspaceSlug, data.generated_at);
+        }
+        setRowErrors((e) => {
+          const { __all: _gone, ...rest } = e;
+          return rest;
+        });
+      } catch {
+        // put back only what the server did not take (everything for the whole-list mark)
+        const back = rows ? before.done.filter((x) => failed.has(x.issue_id)) : before.done;
+        back.forEach((x) => gone.delete(x.issue_id));
+        setData((d) =>
+          d ? { ...d, done: [...d.done, ...back.filter((x) => !d.done.some((y) => y.issue_id === x.issue_id))] } : d
+        );
+        setRowErrors((e) => ({ ...e, __all: SEEN_ERROR_TEXT }));
+      } finally {
+        setHidden((h) => ({ ...h, ...Object.fromEntries([...gone].map((id) => [id, fetchSeq.current])) }));
+        void refresh(true);
+        inFlight.current -= 1;
+        setSeenAllBusy(false);
+      }
+    },
+    [data, workspaceSlug, refresh]
+  );
 
   const passingIds = new Set([...passes.map((p) => p.issueId), ...Object.keys(hidden)]);
 

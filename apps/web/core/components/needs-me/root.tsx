@@ -5,6 +5,7 @@
  */
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "@plane/propel/button";
 import { cn } from "@plane/utils";
 import { useNeedsMe, PASS_UNDO_MS } from "./use-needs-me";
@@ -33,6 +34,15 @@ function Section(props: {
   );
 }
 
+const PROJECT_PICK_KEY = "needs-me-project";
+const readPick = (): { id: string; name: string } | null => {
+  try {
+    return JSON.parse(window.localStorage.getItem(PROJECT_PICK_KEY) ?? "null");
+  } catch {
+    return null;
+  }
+};
+
 const Empty = ({ children }: { children: ReactNode }) => (
   <div className="px-3.5 py-4 text-13 text-tertiary">{children}</div>
 );
@@ -41,6 +51,16 @@ const Skeleton = () => <div className="h-12 animate-pulse border-t border-subtle
 export function NeedsMeRoot({ workspaceSlug }: { workspaceSlug: string }) {
   const n = useNeedsMe(workspaceSlug);
   const { data } = n;
+  const [pick, setPick] = useState(readPick);
+  const choose = (id: string, name: string) => {
+    const next = id === "all" ? null : { id, name };
+    setPick(next);
+    try {
+      window.localStorage.setItem(PROJECT_PICK_KEY, JSON.stringify(next));
+    } catch {
+      // private mode: the pick just lasts until reload
+    }
+  };
 
   if (n.status === "loading" || (n.status === "error" && !data)) {
     return (
@@ -71,12 +91,28 @@ export function NeedsMeRoot({ workspaceSlug }: { workspaceSlug: string }) {
   }
   if (!data) return null;
 
-  const done = data.done.filter((d) => !n.seenIds.includes(d.issue_id));
+  const seenNow = data.done.filter((d) => !n.seenIds.includes(d.issue_id));
+  const projects = new Map<string, string>();
+  [...n.tests, ...data.decisions, ...seenNow, ...data.running].forEach((c) =>
+    projects.set(c.project_id, c.project_name)
+  );
+  // the picked project keeps its chip when its last item goes, so the page does not jump to All
+  if (pick && !projects.has(pick.id)) projects.set(pick.id, pick.name);
+  // copy of the Map entries, so sorting in place is safe
+  // oxlint-disable-next-line unicorn/no-array-sort
+  const projectList = [...projects].sort((a, b) => a[1].localeCompare(b[1]));
+  const active = pick?.id ?? "all";
+  const inProject = <T extends { project_id: string }>(rows: T[]) =>
+    active === "all" ? rows : rows.filter((r) => r.project_id === active);
+  const tests = inProject(n.tests);
+  const decisions = inProject(data.decisions);
+  const done = inProject(seenNow);
+  const running = inProject(data.running);
   const chips: [string, string, number, string][] = [
-    ["tests", "tests", n.tests.length, "#tests"],
-    ["decisions", "decisions", data.decisions.length, "#decisions"],
+    ["tests", "tests", tests.length, "#tests"],
+    ["decisions", "decisions", decisions.length, "#decisions"],
     ["done", "done since you looked", done.length, "#done"],
-    ["running", "running", data.running.length, "#running"],
+    ["running", "running", running.length, "#running"],
   ];
   const sinceLabel = data.seen_at
     ? new Date(data.seen_at).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })
@@ -90,6 +126,24 @@ export function NeedsMeRoot({ workspaceSlug }: { workspaceSlug: string }) {
           : `Offline, showing ${n.updatedAt ? n.updatedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "last load"}`}
         {n.online && n.refreshFailed && <span className="ml-2 text-danger-primary">Could not refresh</span>}
       </p>
+      {projectList.length > 1 && (
+        <div role="group" aria-label="Filter by project" className="mb-3 flex flex-wrap gap-2">
+          {[["all", "All"], ...projectList].map(([id, name]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active === id}
+              onClick={() => choose(id, name)}
+              className={cn(
+                "inline-flex min-h-9 items-center rounded-full border px-3 text-13 font-medium whitespace-nowrap max-sm:min-h-11",
+                active === id ? "border-transparent bg-accent-primary text-on-color" : "border-subtle text-primary"
+              )}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
       <nav aria-label="Sections" className="mb-5 flex flex-wrap gap-2">
         {chips.map(([k, label, count, href]) => (
           <a
@@ -105,23 +159,21 @@ export function NeedsMeRoot({ workspaceSlug }: { workspaceSlug: string }) {
         ))}
       </nav>
 
-      <Section id="tests" title="Tests for you" count={n.tests.length} hint="quickest first">
-        {n.tests.length === 0 ? (
+      <Section id="tests" title="Tests for you" count={tests.length} hint="quickest first">
+        {tests.length === 0 ? (
           <Empty>No tests waiting. When Claude hands you one, its steps show here.</Empty>
         ) : (
-          n.tests.map((t) => (
+          tests.map((t) => (
             <TestRow key={t.issue_id} slug={workspaceSlug} item={t} error={n.rowErrors[t.issue_id]} onPass={n.pass} />
           ))
         )}
       </Section>
 
-      <Section id="decisions" title="Decisions for you" count={data.decisions.length} hint="answer Claude in chat">
-        {data.decisions.length === 0 ? (
+      <Section id="decisions" title="Decisions for you" count={decisions.length} hint="answer Claude in chat">
+        {decisions.length === 0 ? (
           <Empty>Nothing to decide.</Empty>
         ) : (
-          data.decisions.map((d, i) => (
-            <DecisionRow key={d.issue_id} slug={workspaceSlug} item={d} defaultOpen={i === 0} />
-          ))
+          decisions.map((d, i) => <DecisionRow key={d.issue_id} slug={workspaceSlug} item={d} defaultOpen={i === 0} />)
         )}
       </Section>
 
@@ -135,7 +187,7 @@ export function NeedsMeRoot({ workspaceSlug }: { workspaceSlug: string }) {
               variant="secondary"
               className="h-8 max-sm:h-11"
               disabled={done.length === 0 || n.seenAllBusy || !n.online}
-              onClick={() => void n.seenAll()}
+              onClick={() => void n.seenAll(active === "all" ? null : done)}
             >
               OK, seen
             </Button>
@@ -165,11 +217,11 @@ export function NeedsMeRoot({ workspaceSlug }: { workspaceSlug: string }) {
         )}
       </Section>
 
-      <Section id="running" title="Running" count={data.running.length} hint="Building and In Review">
-        {data.running.length === 0 ? (
+      <Section id="running" title="Running" count={running.length} hint="Building and In Review">
+        {running.length === 0 ? (
           <Empty>Nothing running.</Empty>
         ) : (
-          data.running.map((r) => <RunningRow key={r.issue_id} slug={workspaceSlug} item={r} />)
+          running.map((r) => <RunningRow key={r.issue_id} slug={workspaceSlug} item={r} />)
         )}
       </Section>
 

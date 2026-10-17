@@ -144,6 +144,7 @@ class NeedsMeEndpoint(BaseAPIView):
             common = {
                 "issue_id": str(issue.id),
                 "project_id": str(issue.project_id),
+                "project_name": issue.project.name,
                 "key": _key(issue),
                 "name": issue.name,
                 "state": _state(issue.state),
@@ -206,6 +207,7 @@ class NeedsMeEndpoint(BaseAPIView):
                 {
                     "issue_id": str(issue.id),
                     "project_id": str(issue.project_id),
+                    "project_name": issue.project.name,
                     "key": _key(issue),
                     "name": issue.name,
                     "state": _state(issue.state),
@@ -233,6 +235,7 @@ class NeedsMeEndpoint(BaseAPIView):
                 {
                     "issue_id": str(issue.id),
                     "project_id": str(issue.project_id),
+                    "project_name": issue.project.name,
                     "key": _key(issue),
                     "name": issue.name,
                     "state": _state(issue.state),

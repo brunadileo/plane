@@ -9,7 +9,14 @@ import { APIService } from "@/services/api.service";
 
 export type TNeedsMeState = { name: string; group: string; color?: string };
 
-type TCardBase = { issue_id: string; project_id: string; key: string; name: string; state: TNeedsMeState };
+type TCardBase = {
+  issue_id: string;
+  project_id: string;
+  project_name: string;
+  key: string;
+  name: string;
+  state: TNeedsMeState;
+};
 
 export type TNeedsMeTest = TCardBase & {
   test_heading: string;
