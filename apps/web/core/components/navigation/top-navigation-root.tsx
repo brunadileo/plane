@@ -17,7 +17,7 @@ import { Tooltip } from "@plane/propel/tooltip";
 import { AppSidebarItem } from "@/components/sidebar/sidebar-item";
 import { InboxIcon } from "@plane/propel/icons";
 import useSWR from "swr";
-import { useWorkspaceNotifications } from "@/hooks/store/notifications";
+import { needsMeService } from "@/services/needs-me.service";
 // local imports
 import { StarUsOnGitHubLink } from "@/app/(all)/[workspaceSlug]/(projects)/star-us-link";
 
@@ -27,22 +27,17 @@ export const TopNavigationRoot = observer(function TopNavigationRoot() {
   const pathname = usePathname();
 
   // store hooks
-  const { unreadNotificationsCount, getUnreadNotificationsCount } = useWorkspaceNotifications();
   const { preferences } = useAppRailPreferences();
 
   const showLabel = preferences.displayMode === "icon_with_label";
 
-  // Fetch notification count
-  useSWR(
-    workspaceSlug ? "WORKSPACE_UNREAD_NOTIFICATION_COUNT" : null,
-    workspaceSlug ? () => getUnreadNotificationsCount(workspaceSlug.toString()) : null
+  // Inbox dot: decisions or done-since-you-looked, same data as the Inbox page
+  const { data: needsMe } = useSWR(
+    workspaceSlug ? `NEEDS_ME_DOT_${workspaceSlug.toString()}` : null,
+    workspaceSlug ? () => needsMeService.fetch(workspaceSlug.toString()) : null,
+    { refreshInterval: 30000 }
   );
-
-  // Calculate notification count
-  const isMentionsEnabled = unreadNotificationsCount.mention_unread_notifications_count > 0;
-  const totalNotifications = isMentionsEnabled
-    ? unreadNotificationsCount.mention_unread_notifications_count
-    : unreadNotificationsCount.total_unread_notifications_count;
+  const hasInboxItems = (needsMe?.decisions.length ?? 0) + (needsMe?.done.length ?? 0) > 0;
 
   return (
     <div
@@ -64,16 +59,14 @@ export const TopNavigationRoot = observer(function TopNavigationRoot() {
           <AppSidebarItem
             variant="link"
             item={{
-              href: `/${workspaceSlug?.toString()}/notifications/`,
+              href: `/${workspaceSlug?.toString()}/needs-me/`,
               icon: (
                 <div className="relative">
                   <InboxIcon className="size-5" />
-                  {totalNotifications > 0 && (
-                    <span className="absolute top-0 right-0 size-2 rounded-full bg-danger-primary" />
-                  )}
+                  {hasInboxItems && <span className="absolute top-0 right-0 size-2 rounded-full bg-danger-primary" />}
                 </div>
               ),
-              isActive: pathname?.includes("/notifications/"),
+              isActive: pathname?.includes("/needs-me"),
             }}
           />
         </Tooltip>
