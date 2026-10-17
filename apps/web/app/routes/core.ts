@@ -82,6 +82,11 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/drafts", "./(all)/[workspaceSlug]/(projects)/drafts/page.tsx"),
         ]),
 
+        // Inbox (NANO-10)
+        layout("./(all)/[workspaceSlug]/(projects)/needs-me/layout.tsx", [
+          route(":workspaceSlug/needs-me", "./(all)/[workspaceSlug]/(projects)/needs-me/page.tsx"),
+        ]),
+
         // Notifications
         layout("./(all)/[workspaceSlug]/(projects)/notifications/layout.tsx", [
           route(":workspaceSlug/notifications", "./(all)/[workspaceSlug]/(projects)/notifications/page.tsx"),

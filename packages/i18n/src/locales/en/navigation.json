@@ -14,6 +14,8 @@
     "new_work_item": "New work item",
     "home": "Home",
     "inbox": "Inbox",
+    "needs_me": "Inbox",
+    "notifications": "Notifications",
     "workspace": "Workspace",
     "views": "Views",
     "analytics": "Analytics",
