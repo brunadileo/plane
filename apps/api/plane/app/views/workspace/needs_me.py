@@ -13,7 +13,7 @@ from datetime import timedelta
 # Django imports
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -173,10 +173,10 @@ class NeedsMeEndpoint(BaseAPIView):
             )
         tests.sort(key=lambda t: (t["test_minutes"] is None, t["test_minutes"] or 0))  # stable: oldest first
 
-        # Done since the last look
+        # Done since the last look: finished cards only (Bruna, 2026-10-17: "just things that finished and
+        # don't need me"); Final Test cards wait on her and show under Tests.
         done_state_ids = set(
-            State.objects.filter(project_id__in=project_ids)
-            .filter(Q(name=FINAL_TEST) | Q(group="completed"))
+            State.objects.filter(project_id__in=project_ids, group="completed")
             .values_list("id", flat=True)
         )
         done, seen_issue_ids = [], set()
